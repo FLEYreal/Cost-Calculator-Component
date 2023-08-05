@@ -6,6 +6,7 @@ const app = express();
 // Get vars from ".env" file
 const PORT = process.env.PORT || '8082'
 const liraExchangeRate = process.env.liraExchangeRate;
+const usdExchangeRate = process.env.usdExchangeRate;
 
 // Middleware to read JSON
 app.use(express.json());
@@ -16,8 +17,8 @@ app.post('/calculate-cost', (req, res) => {
 
     // 0. Get data from request
     const {
-
-        initialCost, // This cost needs to be in TRY currency
+        initialCostCurrency, // This is a currency of the initial cost, can be only USD | TRY | RUB
+        initialCost, // The cost
 
         commission, // This is an array of objects with the following structure: 
         // { 
@@ -31,7 +32,12 @@ app.post('/calculate-cost', (req, res) => {
     } = req.body;
 
     // 1. Convert initialCost to RUB
-    let rubInitialCost = initialCost * liraExchangeRate;
+    let rubInitialCost;
+
+    if(initialCostCurrency === 'RUB') rubInitialCost = initialCost;
+    if(initialCostCurrency === 'USD') rubInitialCost = initialCost * usdExchangeRate;
+    if(initialCostCurrency === 'TRY') rubInitialCost = initialCost * liraExchangeRate;
+    else rubInitialCost = initialCost;
 
     // 2. Add extra charge
     rubInitialCost += extraCharge;
