@@ -34,15 +34,16 @@ app.post('/calculate-cost', (req, res) => {
     // 1. Convert initialCost to RUB
     let rubInitialCost;
 
+    // 2. Convert initialCost to RUB
     if(initialCostCurrency === 'RUB') rubInitialCost = initialCost;
-    if(initialCostCurrency === 'USD') rubInitialCost = initialCost * usdExchangeRate;
-    if(initialCostCurrency === 'TRY') rubInitialCost = initialCost * liraExchangeRate;
+    else if(initialCostCurrency === 'USD') rubInitialCost = initialCost * usdExchangeRate;
+    else if(initialCostCurrency === 'TRY') rubInitialCost = initialCost * liraExchangeRate;
     else rubInitialCost = initialCost;
 
-    // 2. Add extra charge
+    // 3. Add extra charge
     rubInitialCost += extraCharge;
 
-    // 3. Calculate commission
+    // 4. Calculate commission
     for (let i = 0; i < commission.length; i++) {
 
         // If currency is TRY
@@ -65,7 +66,7 @@ app.post('/calculate-cost', (req, res) => {
         }
     }
 
-    // 4. Return result & log it
+    // 5. Return result & log it
     console.log("\"/calculate-cost\":", rubInitialCost)
 
     res.json({
