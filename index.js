@@ -5,8 +5,12 @@ const app = express();
 
 // Get vars from ".env" file
 const PORT = process.env.PORT || '8082'
-const liraExchangeRate = process.env.liraExchangeRate;
-const usdExchangeRate = process.env.usdExchangeRate;
+
+const Rates = require('./rates');
+const rates = new Rates();
+
+const liraExchangeRate = rates.getTry();
+const usdExchangeRate = rates.getUsd();
 
 // Middleware to read JSON
 app.use(express.json());
@@ -27,6 +31,9 @@ app.post('/calculate-cost', (req, res) => {
         //     currency: 'TRY' | 'RUB' 
         // }
 
+        rateCommission, // This is a number of percent to increase the exchange rates
+        // This value is made because of P2P trading which mostly used to transfer money abroad
+
         extraCharge // This is an amount of money to increase the price in RUB
 
     } = req.body;
@@ -36,8 +43,8 @@ app.post('/calculate-cost', (req, res) => {
 
     // 2. Convert initialCost to RUB
     if(initialCostCurrency === 'RUB') rubInitialCost = initialCost;
-    else if(initialCostCurrency === 'USD') rubInitialCost = initialCost * usdExchangeRate;
-    else if(initialCostCurrency === 'TRY') rubInitialCost = initialCost * liraExchangeRate;
+    else if(initialCostCurrency === 'USD') rubInitialCost = initialCost * ((usdExchangeRate / 100) * (100 + rateCommission));
+    else if(initialCostCurrency === 'TRY') rubInitialCost = initialCost * ((liraExchangeRate / 100) * (100 + rateCommission));
     else rubInitialCost = initialCost;
 
     // 3. Add extra charge
@@ -88,6 +95,9 @@ app.post('/calculate-profit', (req, res) => {
         //     currency: 'TRY' | 'RUB' 
         // }
 
+        rateCommission, // This is a number of percent to increase the exchange rates
+        // This value is made because of P2P trading which mostly used to transfer money abroad
+
     } = req.body;
 
     // 1. Calculate commission
@@ -99,7 +109,7 @@ app.post('/calculate-profit', (req, res) => {
             if (commission[i].type === 'percent') cost -= cost * (commission[i].value / 100);
 
             // If commission type is fixed, just substract it from the initial cost and convert it to RUB
-            else cost -= commission[i].value  * liraExchangeRate;
+            else cost -= commission[i].value  * ((liraExchangeRate / 100) * (100 + rateCommission));
 
         } else {
 
