@@ -9,15 +9,15 @@ const PORT = process.env.PORT || '8082'
 const Rates = require('./rates');
 const rates = new Rates();
 
-const liraExchangeRate = rates.getTry();
-const usdExchangeRate = rates.getUsd();
-
 // Middleware to read JSON
 app.use(express.json());
 
 // Routes
 
-app.post('/calculate-cost', (req, res) => {
+app.post('/calculate-cost', async (req, res) => {
+
+    const liraExchangeRate = await rates.getTry();
+    const usdExchangeRate = await rates.getUsd();
 
     // 0. Get data from request
     const {
@@ -61,7 +61,6 @@ app.post('/calculate-cost', (req, res) => {
 
             // If commission type is fixed, just add it to the initial cost
             else rubInitialCost += commission[i].value * liraExchangeRate;
-
         } else {
 
             // If commission type is percent, just add %
@@ -69,7 +68,6 @@ app.post('/calculate-cost', (req, res) => {
 
             // If commission type is fixed, just add it to the initial cost
             else rubInitialCost -= commission[i].value;
-
         }
     }
 
@@ -81,12 +79,16 @@ app.post('/calculate-cost', (req, res) => {
     })
 });
 
-app.post('/calculate-profit', (req, res) => {
+app.post('/calculate-profit', async (req, res) => {
+
+    const liraExchangeRate = await rates.getTry();
+    const usdExchangeRate = await rates.getUsd();
 
     // 0. Get data from request
     let {
 
         cost, // This is a cost of a good, which is in RUB
+        spends, // Amount of money spent which is in TRY
 
         commission, // This is an array of objects with the following structure: 
         // { 
@@ -122,7 +124,10 @@ app.post('/calculate-profit', (req, res) => {
         }
     }
 
-    // 2. Return result & log it
+    // 2. Substract spends after all commissions:
+    cost = cost - (((spends * liraExchangeRate) / 100) * (100 + rateCommission))
+
+    // 3. Return result & log it
     console.log("\"/calculate-profit\":", cost)
 
     res.json({
