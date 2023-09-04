@@ -20,7 +20,7 @@ app.post('/calculate-cost', async (req, res) => {
     const usdExchangeRate = await rates.getUsd();
 
     // 0. Get data from request
-    const {
+    let {
         initialCostCurrency, // This is a currency of the initial cost, can be only USD | TRY | RUB
         initialCost, // The cost
 
@@ -41,6 +41,8 @@ app.post('/calculate-cost', async (req, res) => {
     // 1. Convert initialCost to RUB
     let rubInitialCost;
 
+    if(!rateCommission) rateCommission = 0;
+
     // 2. Convert initialCost to RUB
     if(initialCostCurrency === 'RUB') rubInitialCost = initialCost;
     else if(initialCostCurrency === 'USD') rubInitialCost = initialCost * ((usdExchangeRate / 100) * (100 + rateCommission));
@@ -48,7 +50,7 @@ app.post('/calculate-cost', async (req, res) => {
     else rubInitialCost = initialCost;
 
     // 3. Add extra charge
-    rubInitialCost += extraCharge;
+    if(extraCharge) rubInitialCost += extraCharge;
 
     // 4. Calculate commission
     for (let i = 0; i < commission.length; i++) {
